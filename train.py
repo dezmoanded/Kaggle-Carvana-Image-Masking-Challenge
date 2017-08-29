@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import pandas as pd
-from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint, TensorBoard
+from tensorflow.contrib.keras.python.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint, TensorBoard
 from sklearn.model_selection import train_test_split
 
 from model.u_net import get_unet_128, get_unet_256, get_unet_512
@@ -67,7 +67,7 @@ def randomHorizontalFlip(image, mask, u=0.5):
     return image, mask
 
 
-def train_generator():
+def train_generator(resize=True, split=False):
     while True:
         for start in range(0, len(ids_train_split), batch_size):
             x_batch = []
@@ -76,9 +76,11 @@ def train_generator():
             ids_train_batch = ids_train_split[start:end]
             for id in ids_train_batch.values:
                 img = cv2.imread('input/train/{}.jpg'.format(id))
-                img = cv2.resize(img, (input_size, input_size))
+                if resize:
+                    img = cv2.resize(img, (input_size, input_size))
                 mask = cv2.imread('input/train_masks/{}_mask.png'.format(id), cv2.IMREAD_GRAYSCALE)
-                mask = cv2.resize(mask, (input_size, input_size))
+                if resize:
+                    mask = cv2.resize(mask, (input_size, input_size))
                 img, mask = randomShiftScaleRotate(img, mask,
                                                    shift_limit=(-0.0625, 0.0625),
                                                    scale_limit=(-0.1, 0.1),
@@ -89,10 +91,13 @@ def train_generator():
                 y_batch.append(mask)
             x_batch = np.array(x_batch, np.float32) / 255
             y_batch = np.array(y_batch, np.float32) / 255
+            if split:
+                x_batch = split_grid(x_batch, [input_size, input_size])
+                y_batch = split_grid(y_batch, [input_size, input_size])
             yield x_batch, y_batch
 
 
-def valid_generator():
+def valid_generator(resize=True, split=False):
     while True:
         for start in range(0, len(ids_valid_split), batch_size):
             x_batch = []
@@ -101,16 +106,38 @@ def valid_generator():
             ids_valid_batch = ids_valid_split[start:end]
             for id in ids_valid_batch.values:
                 img = cv2.imread('input/train/{}.jpg'.format(id))
-                img = cv2.resize(img, (input_size, input_size))
+                if resize:
+                    img = cv2.resize(img, (input_size, input_size))
                 mask = cv2.imread('input/train_masks/{}_mask.png'.format(id), cv2.IMREAD_GRAYSCALE)
-                mask = cv2.resize(mask, (input_size, input_size))
+                if resize:
+                    mask = cv2.resize(mask, (input_size, input_size))
                 mask = np.expand_dims(mask, axis=2)
                 x_batch.append(img)
                 y_batch.append(mask)
             x_batch = np.array(x_batch, np.float32) / 255
             y_batch = np.array(y_batch, np.float32) / 255
+            if split:
+                x_batch = split_grid(x_batch, [input_size, input_size])
+                y_batch = split_grid(y_batch, [input_size, input_size])
             yield x_batch, y_batch
 
+def split_grid(batch, size):
+    def split_dimension(dimension):
+        step = size[dimension - 1]
+        splits = list(range(step, batch.shape[dimension], step))
+        d = np.split(batch, splits, axis=dimension)
+        mirror_size = step - d[-1].shape[dimension]
+        mirror = np.split(batch, [-mirror_size], axis=dimension)[1]
+        mirror = np.flip(mirror, axis=dimension)
+        d[-1] = np.concatenate(d[-1], mirror, axis=dimension)
+        return np.concatenate(d, axis=0)
+
+    batch = split_dimension(1)
+    batch = split_dimension(2)
+    return batch
+
+def initial_batch_size(resulting_batch_size, split_size):
+    return  resulting_batch_size / (split_size[0] * split_size[1])
 
 callbacks = [EarlyStopping(monitor='val_dice_loss',
                            patience=8,
@@ -132,10 +159,12 @@ callbacks = [EarlyStopping(monitor='val_dice_loss',
 
 model = get_unet_128()
 
-model.fit_generator(generator=train_generator(),
+batch_size = initial_batch_size(batch_size, [input_size, input_size])
+
+model.fit_generator(generator=train_generator(resize=False, split=True),
                     steps_per_epoch=np.ceil(float(len(ids_train_split)) / float(batch_size)),
                     epochs=epochs,
                     verbose=2,
                     callbacks=callbacks,
-                    validation_data=valid_generator(),
+                    validation_data=valid_generator(resize=False, split=True),
                     validation_steps=np.ceil(float(len(ids_valid_split)) / float(batch_size)))

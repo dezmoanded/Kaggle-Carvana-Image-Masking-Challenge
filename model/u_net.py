@@ -1,8 +1,8 @@
-from keras.models import Model
-from keras.layers import Input, concatenate, Conv2D, MaxPooling2D, Activation, UpSampling2D, BatchNormalization
-from keras.optimizers import SGD
-from keras.losses import binary_crossentropy
-import keras.backend as K
+from tensorflow.contrib.keras.python.keras.models import Model
+from tensorflow.contrib.keras.python.keras.layers import Input, concatenate, Conv2D, MaxPooling2D, Activation, UpSampling2D, BatchNormalization
+from tensorflow.contrib.keras.python.keras.optimizers import SGD
+from tensorflow.contrib.keras.python.keras.losses import binary_crossentropy
+import tensorflow.contrib.keras.python.keras.backend as K
 
 
 def dice_loss(y_true, y_pred):

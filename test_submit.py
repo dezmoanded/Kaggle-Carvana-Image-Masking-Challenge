@@ -4,6 +4,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from model.u_net import get_unet_128, get_unet_256, get_unet_512
+from train import split_grid, initial_batch_size
 
 df_test = pd.read_csv('input/sample_submission.csv')
 ids_test = df_test['img'].map(lambda s: s.split('.')[0])
@@ -23,6 +24,7 @@ names = []
 for id in ids_test:
     names.append('{}.jpg'.format(id))
 
+should_tile = True
 
 # https://www.kaggle.com/stainsby/fast-tested-rle
 def run_length_encode(mask):
@@ -42,12 +44,14 @@ rles = []
 test_splits = 8  # Split test set (number of splits must be multiple of 2)
 ids_test_splits = np.split(ids_test, indices_or_sections=test_splits)
 
+batch_size = initial_batch_size(batch_size, [input_size, input_size])
+
 split_count = 0
 for ids_test_split in ids_test_splits:
     split_count += 1
 
 
-    def test_generator():
+    def test_generator(resize=True, split=False):
         while True:
             for start in range(0, len(ids_test_split), batch_size):
                 x_batch = []
@@ -55,9 +59,12 @@ for ids_test_split in ids_test_splits:
                 ids_test_split_batch = ids_test_split[start:end]
                 for id in ids_test_split_batch.values:
                     img = cv2.imread('input/test/{}.jpg'.format(id))
-                    img = cv2.resize(img, (input_size, input_size))
+                    if resize:
+                        img = cv2.resize(img, (input_size, input_size))
                     x_batch.append(img)
                 x_batch = np.array(x_batch, np.float32) / 255
+                if split:
+                    x_batch = split_grid(x_batch, [input_size, input_size])
                 yield x_batch
 
 
@@ -68,8 +75,13 @@ for ids_test_split in ids_test_splits:
 
     print("Generating masks...")
     for pred in tqdm(preds, miniters=1000):
-        prob = cv2.resize(pred, (orig_width, orig_height))
-        mask = prob > threshold
+        # prob = cv2.resize(pred, (orig_width, orig_height))
+        step = pred.shape[0] / (batch_size * orig_width)
+        step = np.split(step, orig_width / input_size, axis=0)
+        step = np.concatenate(step, axis=2)
+        step = np.split(step, orig_height / input_size, axis=0)
+        step = np.concatenate(step, axis=1)
+        mask = step > threshold
         rle = run_length_encode(mask)
         rles.append(rle)
 
