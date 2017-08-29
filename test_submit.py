@@ -77,10 +77,12 @@ for ids_test_split in ids_test_splits:
     for pred in tqdm(preds, miniters=1000):
         # prob = cv2.resize(pred, (orig_width, orig_height))
         step = pred.shape[0] / (batch_size * orig_width)
-        step = np.split(step, orig_width / input_size, axis=0)
+        step = np.split(step, orig_width / input_size + 1, axis=0)
         step = np.concatenate(step, axis=2)
-        step = np.split(step, orig_height / input_size, axis=0)
+        step = np.split(step, orig_height / input_size + 1, axis=0)
         step = np.concatenate(step, axis=1)
+        step = np.split(step, [orig_width], axis=2)[0]
+        step = np.split(step, [orig_height], axis=1)[0]
         mask = step > threshold
         rle = run_length_encode(mask)
         rles.append(rle)
