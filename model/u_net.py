@@ -3,7 +3,8 @@ from tensorflow.contrib.keras.python.keras.layers import Input, concatenate, Con
 from tensorflow.contrib.keras.python.keras.optimizers import SGD
 from tensorflow.contrib.keras.python.keras.losses import binary_crossentropy
 import tensorflow.contrib.keras.api.keras.backend as K
-
+from tensorflow.python.client import timeline
+import tensorflow as tf
 
 def dice_loss(y_true, y_pred):
     smooth = 1.
@@ -120,11 +121,14 @@ def get_unet_128(input_shape=(128, 128, 3),
 
     classify = Conv2D(num_classes, (1, 1), activation='sigmoid')(up1)
 
-    model = Model(inputs=inputs, outputs=classify)
+    run_metadata = tf.RunMetadata()
+    model = Model(inputs=inputs, outputs=classify,
+                  options=tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE),
+                  run_metadata=run_metadata)
 
     model.compile(optimizer=SGD(lr=0.01, momentum=0.9), loss=bce_dice_loss, metrics=[dice_loss])
 
-    return model
+    return model, run_metadata
 
 
 def get_unet_256(input_shape=(256, 256, 3),
@@ -406,8 +410,11 @@ def get_unet_512(input_shape=(512, 512, 3),
 
     classify = Conv2D(num_classes, (1, 1), activation='sigmoid')(up0a)
 
-    model = Model(inputs=inputs, outputs=classify)
+    run_metadata = tf.RunMetadata()
+    model = Model(inputs=inputs, outputs=classify,
+                  options=tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE),
+                  run_metadata=run_metadata)
 
     model.compile(optimizer=SGD(lr=0.01, momentum=0.9), loss=bce_dice_loss, metrics=[dice_loss])
 
-    return model
+    return model, run_metadata
