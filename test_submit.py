@@ -44,8 +44,6 @@ rles = []
 test_splits = 8  # Split test set (number of splits must be multiple of 2)
 ids_test_splits = np.split(ids_test, indices_or_sections=test_splits)
 
-batch_size = initial_batch_size(batch_size, [input_size, input_size])
-
 split_count = 0
 for ids_test_split in ids_test_splits:
     split_count += 1

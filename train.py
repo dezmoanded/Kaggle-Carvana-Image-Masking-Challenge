@@ -11,6 +11,9 @@ ids_train = df_train['img'].map(lambda s: s.split('.')[0])
 
 input_size = 128
 
+orig_width = 1918
+orig_height = 1280
+
 epochs = 50
 batch_size = 16
 
@@ -92,8 +95,10 @@ def train_generator(resize=True, split=False):
             x_batch = np.array(x_batch, np.float32) / 255
             y_batch = np.array(y_batch, np.float32) / 255
             if split:
-                x_batch = split_grid(x_batch, [input_size, input_size])
-                y_batch = split_grid(y_batch, [input_size, input_size])
+                x_batches = split_grid(x_batch, [input_size, input_size])
+                y_batches = split_grid(y_batch, [input_size, input_size])
+                for x_batch, y_batch in zip(x_batches, y_batches):
+                    yield x_batch, y_batch
             yield x_batch, y_batch
 
 
@@ -117,27 +122,28 @@ def valid_generator(resize=True, split=False):
             x_batch = np.array(x_batch, np.float32) / 255
             y_batch = np.array(y_batch, np.float32) / 255
             if split:
-                x_batch = split_grid(x_batch, [input_size, input_size])
-                y_batch = split_grid(y_batch, [input_size, input_size])
-            yield x_batch, y_batch
+                x_batches = split_grid(x_batch, [input_size, input_size])
+                y_batches = split_grid(y_batch, [input_size, input_size])
+                for x_batch, y_batch in zip(x_batches, y_batches):
+                    yield x_batch, y_batch
+            else:
+                yield x_batch, y_batch
 
 def split_grid(batch, size):
-    def split_dimension(dimension):
+    def split_dimension(b, dimension):
         step = size[dimension - 1]
         splits = list(range(step, batch.shape[dimension], step))
-        d = np.split(batch, splits, axis=dimension)
+        d = np.split(b, splits, axis=dimension)
         mirror_size = step - d[-1].shape[dimension]
-        mirror = np.split(batch, [-mirror_size], axis=dimension)[1]
-        mirror = np.flip(mirror, axis=dimension)
-        d[-1] = np.concatenate(d[-1], mirror, axis=dimension)
-        return np.concatenate(d, axis=0)
+        if mirror_size > 0:
+            mirror = np.split(b, [-mirror_size], axis=dimension)[1]
+            mirror = np.flip(mirror, axis=dimension)
+            d[-1] = np.concatenate((d[-1], mirror), axis=dimension)
+        return d
 
-    batch = split_dimension(1)
-    batch = split_dimension(2)
-    return batch
-
-def initial_batch_size(resulting_batch_size, split_size):
-    return  resulting_batch_size / (split_size[0] * split_size[1])
+    batches = split_dimension(batch, 1)
+    batches = [split_dimension(b, 2) for b in batches]
+    return [c for b in batches for c in b]
 
 callbacks = [EarlyStopping(monitor='val_dice_loss',
                            patience=8,
@@ -159,12 +165,12 @@ callbacks = [EarlyStopping(monitor='val_dice_loss',
 
 model = get_unet_128()
 
-batch_size = initial_batch_size(batch_size, [input_size, input_size])
+n_batches_per_batch = (orig_height / input_size + 1) * (orig_width / input_size + 1)
 
 model.fit_generator(generator=train_generator(resize=False, split=True),
-                    steps_per_epoch=np.ceil(float(len(ids_train_split)) / float(batch_size)),
+                    steps_per_epoch=np.ceil(float(n_batches_per_batch) * float(len(ids_train_split)) / float(batch_size)),
                     epochs=epochs,
                     verbose=2,
                     callbacks=callbacks,
                     validation_data=valid_generator(resize=False, split=True),
-                    validation_steps=np.ceil(float(len(ids_valid_split)) / float(batch_size)))
+                    validation_steps=np.ceil(float(n_batches_per_batch) * float(len(ids_valid_split)) / float(batch_size)))
