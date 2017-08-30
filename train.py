@@ -163,7 +163,7 @@ callbacks = [EarlyStopping(monitor='val_dice_loss',
                              mode='max'),
              TensorBoard(log_dir='logs')]
 
-model = get_unet_128()
+model, run_metadata = get_unet_128()
 
 n_batches_per_batch = (orig_height / input_size + 1) * (orig_width / input_size + 1)
 
@@ -174,3 +174,7 @@ model.fit_generator(generator=train_generator(resize=False, split=True),
                     callbacks=callbacks,
                     validation_data=valid_generator(resize=False, split=True),
                     validation_steps=np.ceil(float(n_batches_per_batch) * float(len(ids_valid_split)) / float(batch_size)))
+
+trace = timeline.Timeline(step_stats=run_metadata.step_stats)
+with open('timeline.ctf.json', 'w') as f:
+    f.write(trace.generate_chrome_trace_format())
