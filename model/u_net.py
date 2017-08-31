@@ -3,7 +3,6 @@ from tensorflow.contrib.keras.python.keras.layers import Input, concatenate, Con
 from tensorflow.contrib.keras.python.keras.optimizers import SGD
 from tensorflow.contrib.keras.python.keras.losses import binary_crossentropy
 import tensorflow.contrib.keras.api.keras.backend as K
-from tensorflow.python.client import timeline
 import tensorflow as tf
 
 def dice_loss(y_true, y_pred):

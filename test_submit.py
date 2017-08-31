@@ -24,8 +24,6 @@ names = []
 for id in ids_test:
     names.append('{}.jpg'.format(id))
 
-should_tile = True
-
 # https://www.kaggle.com/stainsby/fast-tested-rle
 def run_length_encode(mask):
     '''

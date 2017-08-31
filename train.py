@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from tensorflow.contrib.keras.python.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint, TensorBoard
 from sklearn.model_selection import train_test_split
+from tensorflow.python.client import timeline
 
 from model.u_net import get_unet_128, get_unet_256, get_unet_512
 
@@ -14,7 +15,7 @@ input_size = 128
 orig_width = 1918
 orig_height = 1280
 
-epochs = 50
+epochs = 1#50
 batch_size = 16
 
 ids_train_split, ids_valid_split = train_test_split(ids_train, test_size=0.2, random_state=42)
@@ -165,15 +166,16 @@ callbacks = [EarlyStopping(monitor='val_dice_loss',
 
 model, run_metadata = get_unet_128()
 
-n_batches_per_batch = (orig_height / input_size + 1) * (orig_width / input_size + 1)
+n_batches_per_batch = np.ceil(float(orig_height) / float(input_size)) * np.ceil(float(orig_width) / float(input_size))
 
 model.fit_generator(generator=train_generator(resize=False, split=True),
-                    steps_per_epoch=np.ceil(float(n_batches_per_batch) * float(len(ids_train_split)) / float(batch_size)),
+                    steps_per_epoch=20,#np.ceil(float(n_batches_per_batch) * float(len(ids_train_split)) / float(batch_size)),
                     epochs=epochs,
                     verbose=2,
                     callbacks=callbacks,
                     validation_data=valid_generator(resize=False, split=True),
-                    validation_steps=np.ceil(float(n_batches_per_batch) * float(len(ids_valid_split)) / float(batch_size)))
+                    validation_steps=20#np.ceil(float(n_batches_per_batch) * float(len(ids_valid_split)) / float(batch_size))
+                    )
 
 trace = timeline.Timeline(step_stats=run_metadata.step_stats)
 with open('timeline.ctf.json', 'w') as f:
