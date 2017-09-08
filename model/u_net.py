@@ -1,8 +1,8 @@
-from tensorflow.contrib.keras.python.keras.models import Model
-from tensorflow.contrib.keras.python.keras.layers import Input, concatenate, Conv2D, MaxPooling2D, Activation, UpSampling2D, BatchNormalization
-from tensorflow.contrib.keras.python.keras.optimizers import SGD
-from tensorflow.contrib.keras.python.keras.losses import binary_crossentropy
-import tensorflow.contrib.keras.api.keras.backend as K
+from keras.models import Model
+from keras.layers import Input, concatenate, Conv2D, MaxPooling2D, Activation, UpSampling2D, BatchNormalization
+from keras.optimizers import SGD
+from keras.losses import binary_crossentropy
+import keras.backend as K
 import tensorflow as tf
 
 def dice_loss(y_true, y_pred):
@@ -121,11 +121,12 @@ def get_unet_128(input_shape=(128, 128, 3),
     classify = Conv2D(num_classes, (1, 1), activation='sigmoid')(up1)
 
     run_metadata = tf.RunMetadata()
-    model = Model(inputs=inputs, outputs=classify,
-                  options=tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE),
-                  run_metadata=run_metadata)
+    model = Model(inputs=inputs, outputs=classify)
 
-    model.compile(optimizer=SGD(lr=0.01, momentum=0.9), loss=bce_dice_loss, metrics=[dice_loss])
+    model.compile(optimizer=SGD(lr=0.01, momentum=0.9), loss=bce_dice_loss, metrics=[dice_loss],
+                  options=tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE,
+                                       output_partition_graphs=True),
+                  run_metadata=run_metadata)
 
     return model, run_metadata
 

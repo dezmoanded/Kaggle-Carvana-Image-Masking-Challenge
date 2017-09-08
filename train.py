@@ -1,9 +1,10 @@
 import cv2
 import numpy as np
 import pandas as pd
-from tensorflow.contrib.keras.python.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint, TensorBoard
+from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint, TensorBoard
 from sklearn.model_selection import train_test_split
 from tensorflow.python.client import timeline
+import time
 
 from model.u_net import get_unet_128, get_unet_256, get_unet_512
 
@@ -15,8 +16,8 @@ input_size = 128
 orig_width = 1918
 orig_height = 1280
 
-epochs = 1#50
-batch_size = 16
+epochs = 45
+batch_size = 32
 
 ids_train_split, ids_valid_split = train_test_split(ids_train, test_size=0.2, random_state=42)
 
@@ -70,12 +71,18 @@ def randomHorizontalFlip(image, mask, u=0.5):
 
     return image, mask
 
+n_batches_per_batch = np.ceil(float(orig_height) / float(input_size)) * np.ceil(float(orig_width) / float(input_size))
+steps_per_epoch = np.ceil(float(n_batches_per_batch) * float(len(ids_train_split)) / float(batch_size))
+validation_steps = np.ceil(float(n_batches_per_batch) * float(len(ids_valid_split)) / float(batch_size))
 
+batch_i = 0
 def train_generator(resize=True, split=False):
+    global batch_i
     while True:
         for start in range(0, len(ids_train_split), batch_size):
             x_batch = []
             y_batch = []
+            timeA = time.time()
             end = min(start + batch_size, len(ids_train_split))
             ids_train_batch = ids_train_split[start:end]
             for id in ids_train_batch.values:
@@ -95,12 +102,19 @@ def train_generator(resize=True, split=False):
                 y_batch.append(mask)
             x_batch = np.array(x_batch, np.float32) / 255
             y_batch = np.array(y_batch, np.float32) / 255
+            timeB = time.time()
             if split:
                 x_batches = split_grid(x_batch, [input_size, input_size])
                 y_batches = split_grid(y_batch, [input_size, input_size])
                 for x_batch, y_batch in zip(x_batches, y_batches):
+                    timeC = time.time()
+                    if batch_i % 5 == 0:
+                        epoch_i = batch_i / epochs
+                        print("Epoch {}; Batch {}/{}".format(epoch_i, batch_i, steps_per_epoch))
+                    batch_i += 1
                     yield x_batch, y_batch
-            yield x_batch, y_batch
+            else:
+                yield x_batch, y_batch
 
 
 def valid_generator(resize=True, split=False):
@@ -166,15 +180,13 @@ callbacks = [EarlyStopping(monitor='val_dice_loss',
 
 model, run_metadata = get_unet_128()
 
-n_batches_per_batch = np.ceil(float(orig_height) / float(input_size)) * np.ceil(float(orig_width) / float(input_size))
-
 model.fit_generator(generator=train_generator(resize=False, split=True),
-                    steps_per_epoch=20,#np.ceil(float(n_batches_per_batch) * float(len(ids_train_split)) / float(batch_size)),
+                    steps_per_epoch=steps_per_epoch,
                     epochs=epochs,
                     verbose=2,
                     callbacks=callbacks,
                     validation_data=valid_generator(resize=False, split=True),
-                    validation_steps=20#np.ceil(float(n_batches_per_batch) * float(len(ids_valid_split)) / float(batch_size))
+                    validation_steps=validation_steps
                     )
 
 trace = timeline.Timeline(step_stats=run_metadata.step_stats)
