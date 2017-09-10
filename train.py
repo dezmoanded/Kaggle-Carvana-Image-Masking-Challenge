@@ -3,26 +3,39 @@ import numpy as np
 import pandas as pd
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint, TensorBoard
 from sklearn.model_selection import train_test_split
-from tensorflow.python.client import timeline
-import time
 
-from model.u_net import get_unet_128, get_unet_256, get_unet_512
+import params
+
+input_size = params.input_size
+epochs = params.max_epochs
+batch_size = params.batch_size
+model = params.model_factory()
 
 df_train = pd.read_csv('input/train_masks.csv')
 ids_train = df_train['img'].map(lambda s: s.split('.')[0])
 
-input_size = 128
-
-orig_width = 1918
-orig_height = 1280
-
-epochs = 45
-batch_size = 32
-
-ids_train_split, ids_valid_split = train_test_split(ids_train, test_size=0.2, random_state=42)
+ids_train_split, ids_valid_split = train_test_split(ids_train, test_size=0.1, random_state=42)
 
 print('Training on {} samples'.format(len(ids_train_split)))
 print('Validating on {} samples'.format(len(ids_valid_split)))
+
+
+def randomHueSaturationValue(image, hue_shift_limit=(-180, 180),
+                             sat_shift_limit=(-255, 255),
+                             val_shift_limit=(-255, 255), u=0.5):
+    if np.random.random() < u:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        h, s, v = cv2.split(image)
+        hue_shift = np.random.uniform(hue_shift_limit[0], hue_shift_limit[1])
+        h = cv2.add(h, hue_shift)
+        sat_shift = np.random.uniform(sat_shift_limit[0], sat_shift_limit[1])
+        s = cv2.add(s, sat_shift)
+        val_shift = np.random.uniform(val_shift_limit[0], val_shift_limit[1])
+        v = cv2.add(v, val_shift)
+        image = cv2.merge((h, s, v))
+        image = cv2.cvtColor(image, cv2.COLOR_HSV2BGR)
+
+    return image
 
 
 def randomShiftScaleRotate(image, mask,
@@ -71,27 +84,23 @@ def randomHorizontalFlip(image, mask, u=0.5):
 
     return image, mask
 
-n_batches_per_batch = np.ceil(float(orig_height) / float(input_size)) * np.ceil(float(orig_width) / float(input_size))
-steps_per_epoch = np.ceil(float(n_batches_per_batch) * float(len(ids_train_split)) / float(batch_size))
-validation_steps = np.ceil(float(n_batches_per_batch) * float(len(ids_valid_split)) / float(batch_size))
 
-batch_i = 0
-def train_generator(resize=True, split=False):
-    global batch_i
+def train_generator():
     while True:
         for start in range(0, len(ids_train_split), batch_size):
             x_batch = []
             y_batch = []
-            timeA = time.time()
             end = min(start + batch_size, len(ids_train_split))
             ids_train_batch = ids_train_split[start:end]
             for id in ids_train_batch.values:
                 img = cv2.imread('input/train/{}.jpg'.format(id))
-                if resize:
-                    img = cv2.resize(img, (input_size, input_size))
+                img = cv2.resize(img, (input_size, input_size))
                 mask = cv2.imread('input/train_masks/{}_mask.png'.format(id), cv2.IMREAD_GRAYSCALE)
-                if resize:
-                    mask = cv2.resize(mask, (input_size, input_size))
+                mask = cv2.resize(mask, (input_size, input_size))
+                img = randomHueSaturationValue(img,
+                                               hue_shift_limit=(-50, 50),
+                                               sat_shift_limit=(-5, 5),
+                                               val_shift_limit=(-15, 15))
                 img, mask = randomShiftScaleRotate(img, mask,
                                                    shift_limit=(-0.0625, 0.0625),
                                                    scale_limit=(-0.1, 0.1),
@@ -102,22 +111,10 @@ def train_generator(resize=True, split=False):
                 y_batch.append(mask)
             x_batch = np.array(x_batch, np.float32) / 255
             y_batch = np.array(y_batch, np.float32) / 255
-            timeB = time.time()
-            if split:
-                x_batches = split_grid(x_batch, [input_size, input_size])
-                y_batches = split_grid(y_batch, [input_size, input_size])
-                for x_batch, y_batch in zip(x_batches, y_batches):
-                    timeC = time.time()
-                    if batch_i % 5 == 0:
-                        epoch_i = batch_i / epochs
-                        print("Epoch {}; Batch {}/{}".format(epoch_i, batch_i, steps_per_epoch))
-                    batch_i += 1
-                    yield x_batch, y_batch
-            else:
-                yield x_batch, y_batch
+            yield x_batch, y_batch
 
 
-def valid_generator(resize=True, split=False):
+def valid_generator():
     while True:
         for start in range(0, len(ids_valid_split), batch_size):
             x_batch = []
@@ -126,69 +123,36 @@ def valid_generator(resize=True, split=False):
             ids_valid_batch = ids_valid_split[start:end]
             for id in ids_valid_batch.values:
                 img = cv2.imread('input/train/{}.jpg'.format(id))
-                if resize:
-                    img = cv2.resize(img, (input_size, input_size))
+                img = cv2.resize(img, (input_size, input_size))
                 mask = cv2.imread('input/train_masks/{}_mask.png'.format(id), cv2.IMREAD_GRAYSCALE)
-                if resize:
-                    mask = cv2.resize(mask, (input_size, input_size))
+                mask = cv2.resize(mask, (input_size, input_size))
                 mask = np.expand_dims(mask, axis=2)
                 x_batch.append(img)
                 y_batch.append(mask)
             x_batch = np.array(x_batch, np.float32) / 255
             y_batch = np.array(y_batch, np.float32) / 255
-            if split:
-                x_batches = split_grid(x_batch, [input_size, input_size])
-                y_batches = split_grid(y_batch, [input_size, input_size])
-                for x_batch, y_batch in zip(x_batches, y_batches):
-                    yield x_batch, y_batch
-            else:
-                yield x_batch, y_batch
+            yield x_batch, y_batch
 
-def split_grid(batch, size):
-    def split_dimension(b, dimension):
-        step = size[dimension - 1]
-        splits = list(range(step, batch.shape[dimension], step))
-        d = np.split(b, splits, axis=dimension)
-        mirror_size = step - d[-1].shape[dimension]
-        if mirror_size > 0:
-            mirror = np.split(b, [-mirror_size], axis=dimension)[1]
-            mirror = np.flip(mirror, axis=dimension)
-            d[-1] = np.concatenate((d[-1], mirror), axis=dimension)
-        return d
 
-    batches = split_dimension(batch, 1)
-    batches = [split_dimension(b, 2) for b in batches]
-    return [c for b in batches for c in b]
-
-callbacks = [EarlyStopping(monitor='val_dice_loss',
+callbacks = [EarlyStopping(monitor='val_loss',
                            patience=8,
                            verbose=1,
-                           min_delta=1e-4,
-                           mode='max'),
-             ReduceLROnPlateau(monitor='val_dice_loss',
+                           min_delta=1e-4),
+             ReduceLROnPlateau(monitor='val_loss',
                                factor=0.1,
                                patience=4,
                                verbose=1,
-                               epsilon=1e-4,
-                               mode='max'),
-             ModelCheckpoint(monitor='val_dice_loss',
+                               epsilon=1e-4),
+             ModelCheckpoint(monitor='val_loss',
                              filepath='weights/best_weights.hdf5',
                              save_best_only=True,
-                             save_weights_only=True,
-                             mode='max'),
+                             save_weights_only=True),
              TensorBoard(log_dir='logs')]
 
-model, run_metadata = get_unet_128()
-
-model.fit_generator(generator=train_generator(resize=False, split=True),
-                    steps_per_epoch=steps_per_epoch,
+model.fit_generator(generator=train_generator(),
+                    steps_per_epoch=np.ceil(float(len(ids_train_split)) / float(batch_size)),
                     epochs=epochs,
                     verbose=2,
                     callbacks=callbacks,
-                    validation_data=valid_generator(resize=False, split=True),
-                    validation_steps=validation_steps
-                    )
-
-trace = timeline.Timeline(step_stats=run_metadata.step_stats)
-with open('timeline.ctf.json', 'w') as f:
-    f.write(trace.generate_chrome_trace_format())
+                    validation_data=valid_generator(),
+                    validation_steps=np.ceil(float(len(ids_valid_split)) / float(batch_size)))
