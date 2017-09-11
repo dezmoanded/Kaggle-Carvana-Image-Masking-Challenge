@@ -489,3 +489,62 @@ def get_unet_1024(input_shape=(1024, 1024, 3),
     model.compile(optimizer=RMSprop(lr=0.0001), loss=weighted_bce_dice_loss, metrics=[dice_coeff])
 
     return model
+
+# https://www.kaggle.com/c/carvana-image-masking-challenge/discussion/38125
+def get_unet_1024_heng(input_shape=(1024, 1024, 3),
+                  num_classes=1):
+    inputs = Input(shape=input_shape)
+    # 1024
+
+    down1, down1_pool = down_layer(inputs, 24)
+    # 512
+
+    down2, down2_pool = down_layer(down1_pool, 64)
+    # 256
+
+    down3, down3_pool = down_layer(down2_pool, 128)
+    # 128
+
+    down4, down4_pool = down_layer(down3_pool, 256)
+    # 64
+
+    down5, down5_pool = down_layer(down4_pool, 512)
+    # 32
+
+    down6, down6_pool = down_layer(down5_pool, 768)
+    # 16
+
+    center = Conv2D(768, (3, 3), padding='same')(down6_pool)
+    center = BatchNormalization()(center)
+    center = Activation('relu')(center)
+    center = Conv2D(1024 * num_features_mul, (3, 3), padding='same')(center)
+    center = BatchNormalization()(center)
+    center = Activation('relu')(center)
+    # center
+
+    up6 = up_layer(center, down6, 768)
+    # 16
+
+    up5 = up_layer(up6, down5, 512)
+    # 32
+
+    up4 = up_layer(up5, down4, 256)
+    # 64
+
+    up3 = up_layer(up4, down3, 128)
+    # 128
+
+    up2 = up_layer(up3, down2, 64)
+    # 256
+
+    up1 = up_layer(up2, down1, 24)
+    # 512
+
+    classify = Conv2D(num_classes, (1, 1), activation='sigmoid')(up1)
+
+    model = Model(inputs=inputs, outputs=classify)
+
+    # model.compile(optimizer=RMSprop(lr=0.0001), loss=bce_dice_loss, metrics=[dice_coeff])
+    model.compile(optimizer=RMSprop(lr=0.0001), loss=weighted_bce_dice_loss, metrics=[dice_coeff])
+
+    return model
