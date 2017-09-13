@@ -523,19 +523,19 @@ def get_unet_1024_heng(input_shape=(1024, 1024, 3),
     center = Activation('relu')(center)
     # center
 
-    up6 = up_layer(center, down6, 768)
+    up6 = up_layer(center, down6, 512)
     # 16
 
-    up5 = up_layer(up6, down5, 512)
+    up5 = up_layer(up6, down5, 256)
     # 32
 
-    up4 = up_layer(up5, down4, 256)
+    up4 = up_layer(up5, down4, 128)
     # 64
 
-    up3 = up_layer(up4, down3, 128)
+    up3 = up_layer(up4, down3, 64)
     # 128
 
-    up2 = up_layer(up3, down2, 64)
+    up2 = up_layer(up3, down2, 24)
     # 256
 
     up1 = up_layer(up2, down1, 24)
@@ -547,5 +547,5 @@ def get_unet_1024_heng(input_shape=(1024, 1024, 3),
 
     # model.compile(optimizer=RMSprop(lr=0.0001), loss=bce_dice_loss, metrics=[dice_coeff])
     # model.compile(optimizer=RMSprop(lr=0.0001), loss=weighted_bce_dice_loss, metrics=[dice_coeff])
-    model.compile(optimizer=Adam(lr=0.0001, accumulator=16.), loss=weighted_bce_dice_loss, metrics=[dice_coeff])
+    model.compile(optimizer=Adam(lr=0.0001, accumulator=3.), loss=weighted_bce_dice_loss, metrics=[dice_coeff])
     return model
