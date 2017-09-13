@@ -53,7 +53,7 @@ def data_loader(q, ):
         end = min(start + batch_size, len(ids_test))
         ids_test_batch = ids_test[start:end]
         for id in ids_test_batch.values:
-            img = cv2.imread('input/test/{}.jpg'.format(id))
+            img = cv2.imread('input/test_hq/{}.jpg'.format(id))
             if input_size is not None:
                 img = cv2.resize(img, (input_size, input_size))
             x_batch.append(img)

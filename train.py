@@ -93,7 +93,7 @@ def train_generator():
             end = min(start + batch_size, len(ids_train_split))
             ids_train_batch = ids_train_split[start:end]
             for id in ids_train_batch.values:
-                img = cv2.imread('input/train/{}.jpg'.format(id))
+                img = cv2.imread('input/train_hq/{}.jpg'.format(id))
                 img = cv2.resize(img, (input_size, input_size))
                 mask = cv2.imread('input/train_masks/{}_mask.png'.format(id), cv2.IMREAD_GRAYSCALE)
                 mask = cv2.resize(mask, (input_size, input_size))
@@ -122,7 +122,7 @@ def valid_generator():
             end = min(start + batch_size, len(ids_valid_split))
             ids_valid_batch = ids_valid_split[start:end]
             for id in ids_valid_batch.values:
-                img = cv2.imread('input/train/{}.jpg'.format(id))
+                img = cv2.imread('input/train_hq/{}.jpg'.format(id))
                 img = cv2.resize(img, (input_size, input_size))
                 mask = cv2.imread('input/train_masks/{}_mask.png'.format(id), cv2.IMREAD_GRAYSCALE)
                 mask = cv2.resize(mask, (input_size, input_size))
