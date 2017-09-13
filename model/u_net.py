@@ -518,9 +518,9 @@ def get_unet_1024_heng(input_shape=(1024, 1024, 3),
     center = Conv2D(768, (3, 3), padding='same')(down6_pool)
     center = BatchNormalization()(center)
     center = Activation('relu')(center)
-    center = Conv2D(768, (3, 3), padding='same')(center)
-    center = BatchNormalization()(center)
-    center = Activation('relu')(center)
+    # center = Conv2D(768, (3, 3), padding='same')(center)
+    # center = BatchNormalization()(center)
+    # center = Activation('relu')(center)
     # center
 
     up6 = up_layer(center, down6, 512)
@@ -547,5 +547,5 @@ def get_unet_1024_heng(input_shape=(1024, 1024, 3),
 
     # model.compile(optimizer=RMSprop(lr=0.0001), loss=bce_dice_loss, metrics=[dice_coeff])
     # model.compile(optimizer=RMSprop(lr=0.0001), loss=weighted_bce_dice_loss, metrics=[dice_coeff])
-    model.compile(optimizer=Adam(lr=0.0001, accumulator=8.), loss=weighted_bce_dice_loss, metrics=[dice_coeff])
+    model.compile(optimizer=Adam(lr=0.0001, accumulator=4.), loss=weighted_bce_dice_loss, metrics=[dice_coeff])
     return model
