@@ -1,6 +1,7 @@
 from keras.models import Model
 from keras.layers import Input, concatenate, Conv2D, MaxPooling2D, Activation, UpSampling2D, BatchNormalization
 from keras.optimizers import RMSprop
+from optimizers import Adam
 
 from model.losses import bce_dice_loss, dice_loss, weighted_bce_dice_loss, weighted_dice_loss, dice_coeff
 
@@ -545,6 +546,6 @@ def get_unet_1024_heng(input_shape=(1024, 1024, 3),
     model = Model(inputs=inputs, outputs=classify)
 
     # model.compile(optimizer=RMSprop(lr=0.0001), loss=bce_dice_loss, metrics=[dice_coeff])
-    model.compile(optimizer=RMSprop(lr=0.0001), loss=weighted_bce_dice_loss, metrics=[dice_coeff])
-
+    # model.compile(optimizer=RMSprop(lr=0.0001), loss=weighted_bce_dice_loss, metrics=[dice_coeff])
+    model.compile(optimizer=Adam(lr=0.0001, accumulator=2.), loss=weighted_bce_dice_loss, metrics=[dice_coeff])
     return model
