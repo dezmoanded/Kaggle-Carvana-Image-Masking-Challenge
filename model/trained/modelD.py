@@ -8,10 +8,10 @@ num_features_mul = 1
 
 def down_layer(input, n_features):
     down = Conv2D(n_features, (3, 3), padding='same')(input)
-    down = BatchNormalization()(down)
+    # down = BatchNormalization()(down)
     down = Activation('relu')(down)
     down = Conv2D(n_features, (3, 3), padding='same')(down)
-    down = BatchNormalization()(down)
+    # down = BatchNormalization()(down)
     down = Activation('relu')(down)
     down_pool = MaxPooling2D((2, 2), strides=(2, 2))(down)
     return down, down_pool
@@ -20,13 +20,13 @@ def up_layer(input, down, n_features):
     up = UpSampling2D((2, 2))(input)
     up = concatenate([down, up], axis=3)
     up = Conv2D(n_features, (3, 3), padding='same')(up)
-    up = BatchNormalization()(up)
+    # up = BatchNormalization()(up)
     up = Activation('relu')(up)
     up = Conv2D(n_features, (3, 3), padding='same')(up)
-    up = BatchNormalization()(up)
+    # up = BatchNormalization()(up)
     up = Activation('relu')(up)
     up = Conv2D(n_features, (3, 3), padding='same')(up)
-    up = BatchNormalization()(up)
+    # up = BatchNormalization()(up)
     up = Activation('relu')(up)
     return up
 
