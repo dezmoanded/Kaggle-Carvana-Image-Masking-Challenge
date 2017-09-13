@@ -432,10 +432,10 @@ def get_unet_1024(input_shape=(1024, 1024, 3),
     inputs = Input(shape=input_shape)
     # 1024
 
-    down0b, down0b_pool = down_layer(inputs, 32 * num_features_mul)
+    down0b, down0b_pool = down_layer(inputs, 8 * num_features_mul)
     # 512
 
-    down0a, down0a_pool = down_layer(down0b_pool, 32 * num_features_mul)
+    down0a, down0a_pool = down_layer(down0b_pool, 16 * num_features_mul)
     # 256
 
     down0, down0_pool = down_layer(down0a_pool, 32 * num_features_mul)
@@ -476,10 +476,10 @@ def get_unet_1024(input_shape=(1024, 1024, 3),
     up0 = up_layer(up1, down0, 32 * num_features_mul)
     # 256
 
-    up0a = up_layer(up0, down0a, 32 * num_features_mul)
+    up0a = up_layer(up0, down0a, 16 * num_features_mul)
     # 512
 
-    up0b = up_layer(up0a, down0b, 32 * num_features_mul)
+    up0b = up_layer(up0a, down0b, 8 * num_features_mul)
     # 1024
 
     classify = Conv2D(num_classes, (1, 1), activation='sigmoid')(up0b)
@@ -487,7 +487,8 @@ def get_unet_1024(input_shape=(1024, 1024, 3),
     model = Model(inputs=inputs, outputs=classify)
 
     # model.compile(optimizer=RMSprop(lr=0.0001), loss=bce_dice_loss, metrics=[dice_coeff])
-    model.compile(optimizer=RMSprop(lr=0.0001), loss=weighted_bce_dice_loss, metrics=[dice_coeff])
+#     model.compile(optimizer=RMSprop(lr=0.0001), loss=weighted_bce_dice_loss, metrics=[dice_coeff])
+    model.compile(optimizer=Adam(lr=0.0001, accumulator=3.), loss=weighted_bce_dice_loss, metrics=[dice_coeff])
 
     return model
 
