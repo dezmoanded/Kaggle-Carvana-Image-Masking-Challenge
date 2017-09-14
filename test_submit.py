@@ -19,7 +19,6 @@ names = []
 for id in ids_test:
     names.append('{}.jpg'.format(id))
 
-
 # https://www.kaggle.com/stainsby/fast-tested-rle
 def run_length_encode(mask):
     '''
@@ -32,29 +31,32 @@ def run_length_encode(mask):
     rle = ' '.join([str(r) for r in runs])
     return rle
 
+def prediction_generator(filepath):
+    model.load_weights(filepath=filepath)
 
-rles = []
+    print('Predicting on {} samples with batch_size = {}...'.format(len(ids_test), batch_size))
+    for start in tqdm(range(0, len(ids_test), batch_size)):
+        x_batch = []
+        end = min(start + batch_size, len(ids_test))
+        ids_test_batch = ids_test[start:end]
+        for id in ids_test_batch.values:
+            img = cv2.imread('input/test_hq/{}.jpg'.format(id))
+            img = cv2.resize(img, (input_size, input_size))
+            x_batch.append(img)
+        x_batch = np.array(x_batch, np.float32) / 255
+        preds = model.predict_on_batch(x_batch)
+        preds = np.squeeze(preds, axis=3)
+        for pred in preds:
+            yield cv2.resize(pred, (orig_width, orig_height))
 
-model.load_weights(filepath='weights/best_weights.hdf5')
+if __name__ == "__main__":
+    rles = []
 
-print('Predicting on {} samples with batch_size = {}...'.format(len(ids_test), batch_size))
-for start in tqdm(range(0, len(ids_test), batch_size)):
-    x_batch = []
-    end = min(start + batch_size, len(ids_test))
-    ids_test_batch = ids_test[start:end]
-    for id in ids_test_batch.values:
-        img = cv2.imread('input/test_hq/{}.jpg'.format(id))
-        img = cv2.resize(img, (input_size, input_size))
-        x_batch.append(img)
-    x_batch = np.array(x_batch, np.float32) / 255
-    preds = model.predict_on_batch(x_batch)
-    preds = np.squeeze(preds, axis=3)
-    for pred in preds:
-        prob = cv2.resize(pred, (orig_width, orig_height))
+    for prob in prediction_generator('weights/best_weights.hdf5'):
         mask = prob > threshold
         rle = run_length_encode(mask)
         rles.append(rle)
 
-print("Generating submission file...")
-df = pd.DataFrame({'img': names, 'rle_mask': rles})
-df.to_csv('submit/submission.csv.gz', index=False, compression='gzip')
+    print("Generating submission file...")
+    df = pd.DataFrame({'img': names, 'rle_mask': rles})
+    df.to_csv('submit/submission.csv.gz', index=False, compression='gzip')

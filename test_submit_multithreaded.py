@@ -15,14 +15,6 @@ orig_height = params.orig_height
 threshold = params.threshold
 model = params.model_factory()
 
-df_test = pd.read_csv('input/sample_submission.csv')
-ids_test = df_test['img'].map(lambda s: s.split('.')[0])
-
-names = []
-for id in ids_test:
-    names.append('{}.jpg'.format(id))
-
-
 # https://www.kaggle.com/stainsby/fast-tested-rle
 def run_length_encode(mask):
     '''
@@ -36,50 +28,63 @@ def run_length_encode(mask):
     return rle
 
 
-rles = []
+def predict(ids, callback, model_path='weights/best_weights.hdf5', data_dir='input/test_hq'):
+    model.load_weights(filepath=model_path)
+    graph = tf.get_default_graph()
+    q_size = 10
 
-model.load_weights(filepath='weights/best_weights.hdf5')
-graph = tf.get_default_graph()
+    def data_loader(q, ):
+        for start in range(0, len(ids), batch_size):
+            x_batch = []
+            end = min(start + batch_size, len(ids))
+            ids_test_batch = ids[start:end]
+            for id in ids_test_batch.values:
+                img = cv2.imread('{}/{}.jpg'.format(data_dir, id))
+                img = cv2.resize(img, (input_size, input_size))
+                x_batch.append(img)
+            x_batch = np.array(x_batch, np.float32) / 255
+            q.put(x_batch)
 
-q_size = 10
+    def predictor(q, ):
+        for i in tqdm(range(0, len(ids), batch_size)):
+            x_batch = q.get()
+            with graph.as_default():
+                preds = model.predict_on_batch(x_batch)
+            preds = np.squeeze(preds, axis=3)
+            end = min(i + batch_size, len(ids))
+            ids_test_batch = ids[i:end]
+            for pred, id in zip(preds, ids_test_batch.values):
+                prob = cv2.resize(pred, (orig_width, orig_height))
+                callback(prob, id)
+
+    q = queue.Queue(maxsize=q_size)
+    t1 = threading.Thread(target=data_loader, name='DataLoader', args=(q,))
+    t2 = threading.Thread(target=predictor, name='Predictor', args=(q,))
+    print('Predicting on {} samples with batch_size = {}...'.format(len(ids), batch_size))
+    t1.start()
+    t2.start()
+    # Wait for both threads to finish
+    t1.join()
+    t2.join()
 
 
-def data_loader(q, ):
-    for start in range(0, len(ids_test), batch_size):
-        x_batch = []
-        end = min(start + batch_size, len(ids_test))
-        ids_test_batch = ids_test[start:end]
-        for id in ids_test_batch.values:
-            img = cv2.imread('input/test_hq/{}.jpg'.format(id))
-            img = cv2.resize(img, (input_size, input_size))
-            x_batch.append(img)
-        x_batch = np.array(x_batch, np.float32) / 255
-        q.put(x_batch)
+if __name__ == "__main__":
+    df_test = pd.read_csv('input/sample_submission.csv')
+    ids_test = df_test['img'].map(lambda s: s.split('.')[0])
 
+    names = []
+    for id in ids_test:
+        names.append('{}.jpg'.format(id))
 
-def predictor(q, ):
-    for i in tqdm(range(0, len(ids_test), batch_size)):
-        x_batch = q.get()
-        with graph.as_default():
-            preds = model.predict_on_batch(x_batch)
-        preds = np.squeeze(preds, axis=3)
-        for pred in preds:
-            prob = cv2.resize(pred, (orig_width, orig_height))
-            mask = prob > threshold
-            rle = run_length_encode(mask)
-            rles.append(rle)
+    rles = []
 
+    def callback(prob, id):
+        mask = prob > threshold
+        rle = run_length_encode(mask)
+        rles.append(rle)
 
-q = queue.Queue(maxsize=q_size)
-t1 = threading.Thread(target=data_loader, name='DataLoader', args=(q,))
-t2 = threading.Thread(target=predictor, name='Predictor', args=(q,))
-print('Predicting on {} samples with batch_size = {}...'.format(len(ids_test), batch_size))
-t1.start()
-t2.start()
-# Wait for both threads to finish
-t1.join()
-t2.join()
+    predict(ids_test, callback, 'weights/best_weights.hdf5', 'input/test_hq')
 
-print("Generating submission file...")
-df = pd.DataFrame({'img': names, 'rle_mask': rles})
-df.to_csv('submit/submission.csv.gz', index=False, compression='gzip')
+    print("Generating submission file...")
+    df = pd.DataFrame({'img': names, 'rle_mask': rles})
+    df.to_csv('submit/submission.csv.gz', index=False, compression='gzip')
