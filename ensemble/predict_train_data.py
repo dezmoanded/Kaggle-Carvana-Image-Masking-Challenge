@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import sys
+import os
 sys.path.insert(0,'..')
 
 from test_submit_multithreaded import predict, ModelConfig
@@ -20,11 +21,19 @@ def predict_train_data(model_name = "A"):
 
     ids_train_split, ids_valid_split = train_test_split(ids_train, test_size=0.1, random_state=42)
 
+    train_dir = "model{}/train/train_predictions".format(model_name)
+    if not os.path.exists(train_dir):
+        os.makedirs(train_dir)
+
     def train_callback(prob, id):
-        np.save("model{}/train/train_predictions/{}".format(model_name, id), prob)
+        np.save("{}/{}".format(train_dir, id), prob)
+
+    valid_dir = "model{}/train/valid_predictions".format(model_name)
+    if not os.path.exists(valid_dir):
+        os.makedirs(valid_dir)
 
     def valid_callback(prob, id):
-        np.save("model{}/train/valid_predictions/{}".format(model_name, id), prob)
+        np.save("{}/{}".format(valid_dir, id), prob)
 
     model_config = model_configs[model_name]
 
