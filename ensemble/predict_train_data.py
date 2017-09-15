@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 import sys
 
-from test_submit_multithreaded import predict
+from ..test_submit_multithreaded import predict
 
 def predict_train_data(model_name = "A"):
     df_train = pd.read_csv('../input/train_masks.csv')
