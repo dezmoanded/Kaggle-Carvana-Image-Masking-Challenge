@@ -27,9 +27,19 @@ def run_length_encode(mask):
     rle = ' '.join([str(r) for r in runs])
     return rle
 
+class ModelConfig:
+    def __init__(self, model, weights_path, input_size, batch_size):
+        self.model = model
+        self.weights_path = weights_path
+        self.input_size = input_size
+        self.batch_size = batch_size
 
-def predict(ids, callback, model_path='weights/best_weights.hdf5', data_dir='input/test_hq'):
-    model.load_weights(filepath=model_path)
+def predict(ids, callback, model_config, data_dir='input/test_hq'):
+    model = model_config.model
+    input_size = model_config.input_size
+    batch_size = model_config.batch_size
+
+    model.load_weights(filepath=model_config.weights_path)
     graph = tf.get_default_graph()
     q_size = 10
 
