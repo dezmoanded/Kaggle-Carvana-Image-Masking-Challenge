@@ -149,7 +149,7 @@ callbacks = [EarlyStopping(monitor='val_loss',
                              save_weights_only=True),
              TensorBoard(log_dir='logs')]
 
-model.load_weights('weights/best_weights.hdf5')
+# model.load_weights('weights/best_weights.hdf5')
 model.fit_generator(generator=train_generator(),
                     steps_per_epoch=np.ceil(float(len(ids_train_split)) / float(batch_size)),
                     epochs=epochs,
