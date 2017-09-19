@@ -8,6 +8,18 @@ import os
 import params
 from ensemble_model import get_ensemble_model, batch_size
 
+def run_length_decode(rle, orig_width, orig_height):
+    runs = np.array(rle.split(' ')).astype(int)
+    runs[1::2] = runs[1::2] + runs[:-1:2]
+    inds = np.zeros(orig_height * orig_width)
+    runs = runs - 1
+    starts = runs[::2]
+    ends = runs[1::2]
+    for start, end in zip(starts, ends):
+        inds[start:end] = 1
+    mask = inds.reshape(orig_height, orig_width)
+    return mask
+
 epochs = 100
 
 model_names = ["C", "D"]

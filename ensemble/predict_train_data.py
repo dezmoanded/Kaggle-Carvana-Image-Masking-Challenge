@@ -7,6 +7,7 @@ sys.path.insert(0,'..')
 
 from test_submit_multithreaded import predict, ModelConfig
 from model.u_net import get_unet_128, get_unet_256, get_unet_512, get_unet_1024, get_unet_1024_heng
+from compress import compress
 
 model_configs = {
     "A": ModelConfig(get_unet_128(),
@@ -15,7 +16,7 @@ model_configs = {
                      16)
 }
 
-def predict_train_data(model_name = "A"):
+def predict_train_data(model_name):
     df_train = pd.read_csv('../input/train_masks.csv')
     ids_train = df_train['img'].map(lambda s: s.split('.')[0])
 
@@ -26,14 +27,16 @@ def predict_train_data(model_name = "A"):
         os.makedirs(train_dir)
 
     def train_callback(prob, id):
-        np.save("{}/{}".format(train_dir, id), prob)
+        df = compress(prob)
+        df.to_pickle("{}/{}.pkl".format(train_dir, id))
 
     valid_dir = "model{}/train/valid_predictions".format(model_name)
     if not os.path.exists(valid_dir):
         os.makedirs(valid_dir)
 
     def valid_callback(prob, id):
-        np.save("{}/{}".format(valid_dir, id), prob)
+        df = compress(prob)
+        df.to_pickle("{}/{}.pkl".format(valid_dir, id))
 
     model_config = model_configs[model_name]
 
