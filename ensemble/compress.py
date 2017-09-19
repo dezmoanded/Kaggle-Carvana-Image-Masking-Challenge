@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 
 def compress(prob):
-    lower_limit = .0005
-    upper_limit = .99999
+    lower_limit = .005
+    upper_limit = .9999
 
     flat = prob.flatten()
     flat[flat < lower_limit] = 0
