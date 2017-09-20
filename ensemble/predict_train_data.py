@@ -8,12 +8,25 @@ sys.path.insert(0,'..')
 from test_submit_multithreaded import predict, ModelConfig
 from model.u_net import get_unet_128, get_unet_256, get_unet_512, get_unet_1024, get_unet_1024_heng
 from compress import compress
+import model.trained.modelD as modelD
 
 model_configs = {
     "A": ModelConfig(get_unet_128(),
                      "../weights/best_weightsA.hdf5",
                      128,
-                     16)
+                     16),
+    "C": ModelConfig(get_unet_1024(),
+                     "../weights/best_weightsC.hdf5",
+                     1024,
+                     6),
+    "D": ModelConfig(modelD.get_unet_1024(),
+                     "../weights/best_weightsD.hdf5",
+                     1024,
+                     5),
+    "E": ModelConfig(get_unet_1024(),
+                     "../weights/best_weightsE.hdf5",
+                     1024,
+                     7)
 }
 
 def predict_train_data(model_name):
