@@ -7,6 +7,7 @@ import os
 
 import params
 from ensemble_model import get_ensemble_model, batch_size
+from compress import decompress
 
 def run_length_decode(rle, orig_width, orig_height):
     runs = np.array(rle.split(' ')).astype(int)
@@ -22,7 +23,7 @@ def run_length_decode(rle, orig_width, orig_height):
 
 epochs = 100
 
-model_names = ["C", "D"]
+model_names = ["A", "C", "D", "E"]
 
 model = get_ensemble_model([params.orig_width, params.orig_height, len(model_names)])
 
@@ -39,7 +40,11 @@ def generator(folder, ids_split):
             end = min(start + batch_size, len(ids_split))
             ids_batch = ids_split[start:end]
             for id in ids_batch.values:
-                predictions = [np.load("model{}/train/{}/{}.npy".format(model_name, folder, id))
+                def load_file(name):
+                    compressed = pd.read_pickle(file)
+                    return decompress(compressed, params.orig_height, params.orig_width)
+
+                predictions = [load_file("model{}/train/{}/{}.pkl".format(model_name, folder, id))
                               for model_name in model_names]
                 predictions = np.concatenate(predictions, axis=2)
 
