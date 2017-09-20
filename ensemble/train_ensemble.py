@@ -56,6 +56,7 @@ def generator(folder, ids_split):
                 x_batch.append(predictions)
                 y_batch.append(mask)
 
+            x_batch = np.array(x_batch, np.float32)
             y_batch = np.array(y_batch, np.float32) / 255
             yield x_batch, y_batch
 
