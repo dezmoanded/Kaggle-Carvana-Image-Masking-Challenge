@@ -4,6 +4,8 @@ import pandas as pd
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint, TensorBoard
 from sklearn.model_selection import train_test_split
 import os
+import sys
+sys.path.insert(0,'..')
 
 import params
 from ensemble_model import get_ensemble_model, batch_size
