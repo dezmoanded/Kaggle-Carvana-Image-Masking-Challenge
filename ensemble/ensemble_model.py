@@ -4,7 +4,7 @@ from keras.optimizers import RMSprop
 
 from model.losses import bce_dice_loss, dice_loss, weighted_bce_dice_loss, weighted_dice_loss, dice_coeff
 
-batch_size = 6
+batch_size = 4
 
 def get_ensemble_model(input_shape, num_classes=1):
     inputs = Input(shape=input_shape)
