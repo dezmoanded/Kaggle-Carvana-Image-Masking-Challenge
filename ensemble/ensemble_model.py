@@ -9,7 +9,7 @@ batch_size = 16
 def get_ensemble_model(input_shape, num_classes=1):
     inputs = Input(shape=input_shape)
 
-    conv1 = Conv2D(64, (3, 3), padding='same')(input)
+    conv1 = Conv2D(64, (3, 3), padding='same')(inputs)
     conv1 = BatchNormalization()(conv1)
     conv1 = Activation('relu')(conv1)
 
