@@ -80,7 +80,7 @@ def weighted_bce_dice_loss(y_true, y_pred):
     elif K.int_shape(y_pred)[1] == 1024:
         kernel_size = 41
     else:
-        raise ValueError('Unexpected image size')
+        kernel_size = 41 #raise ValueError('Unexpected image size')
     averaged_mask = K.pool2d(
         y_true, pool_size=(kernel_size, kernel_size), strides=(1, 1), padding='same', pool_mode='avg')
     border = K.cast(K.greater(averaged_mask, 0.005), 'float32') * K.cast(K.less(averaged_mask, 0.995), 'float32')
