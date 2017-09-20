@@ -44,7 +44,8 @@ def generator(folder, ids_split):
             for id in ids_batch.values:
                 def load_file(name):
                     compressed = pd.read_pickle(name)
-                    return decompress(compressed, params.orig_height, params.orig_width)
+                    prediction = decompress(compressed, params.orig_height, params.orig_width)
+                    return np.expand_dims(prediction, axis=2)
 
                 predictions = [load_file("model{}/train/{}/{}.pkl".format(model_name, folder, id))
                               for model_name in model_names]
