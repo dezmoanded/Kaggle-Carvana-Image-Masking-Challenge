@@ -159,6 +159,6 @@ model.fit_generator(generator=train_generator(),
                     epochs=epochs,
                     verbose=2,
                     callbacks=callbacks,
-                    validation_data=zip*[(x_batch, y_batch) for x_batch, y_batch in valid_generator()]),
+                    validation_data=zip(*[(x_batch, y_batch) for x_batch, y_batch in valid_generator()]),
 #                     validation_data=valid_generator(),
                     validation_steps=np.ceil(float(len(ids_valid_split)) / float(batch_size)))
