@@ -115,6 +115,7 @@ def train_generator():
 
 
 def valid_generator():
+    batch_size = len(ids_valid_split)
     for i in range(1):
         for start in range(0, len(ids_valid_split), batch_size):
             x_batch = []
