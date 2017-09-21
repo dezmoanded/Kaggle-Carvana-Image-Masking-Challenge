@@ -115,8 +115,7 @@ def train_generator():
 
 
 def valid_generator():
-    batch_size = len(ids_valid_split)
-    for i in range(1):
+    while True:
         for start in range(0, len(ids_valid_split), batch_size):
             x_batch = []
             y_batch = []
@@ -133,7 +132,6 @@ def valid_generator():
             x_batch = np.array(x_batch, np.float32) / 255
             y_batch = np.array(y_batch, np.float32) / 255
             yield x_batch, y_batch
-    return
 
 
 callbacks = [EarlyStopping(monitor='val_loss',
@@ -149,19 +147,13 @@ callbacks = [EarlyStopping(monitor='val_loss',
                              filepath='weights/best_weights.hdf5',
                              save_best_only=True,
                              save_weights_only=True),
-             TensorBoard(log_dir='logs',
-                         histogram_freq=1,
-                         write_grads=True,
-                         batch_size=batch_size,
-                         write_images=True)]
+             TensorBoard(log_dir='logs')]
 
 # model.load_weights('weights/best_weights.hdf5')
-valid_steps = np.ceil(float(len(ids_valid_split)) / float(batch_size))
 model.fit_generator(generator=train_generator(),
                     steps_per_epoch=np.ceil(float(len(ids_train_split)) / float(batch_size)),
                     epochs=epochs,
                     verbose=2,
                     callbacks=callbacks,
-                    validation_data=[(x_batch, y_batch) for x_batch, y_batch in valid_generator()][0],
-#                     validation_data=valid_generator(),
-                    validation_steps=valid_steps)
+                    validation_data=valid_generator(),
+                    validation_steps=np.ceil(float(len(ids_valid_split)) / float(batch_size)))
