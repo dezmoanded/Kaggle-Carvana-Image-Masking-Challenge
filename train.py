@@ -149,6 +149,8 @@ callbacks = [EarlyStopping(monitor='val_loss',
                              save_weights_only=True),
              TensorBoard(log_dir='logs',
                          histogram_freq=1,
+                         write_grads=True,
+                         batch_size=batch_size,
                          write_images=True)]
 
 # model.load_weights('weights/best_weights.hdf5')
@@ -157,5 +159,6 @@ model.fit_generator(generator=train_generator(),
                     epochs=epochs,
                     verbose=2,
                     callbacks=callbacks,
-                    validation_data=valid_generator(),
+                    validation_data=zip*[(x_batch, y_batch) for x_batch, y_batch in valid_generator()]),
+#                     validation_data=valid_generator(),
                     validation_steps=np.ceil(float(len(ids_valid_split)) / float(batch_size)))
