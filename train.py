@@ -161,6 +161,6 @@ model.fit_generator(generator=train_generator(),
                     epochs=epochs,
                     verbose=2,
                     callbacks=callbacks,
-                    validation_data=zip(*[(x_batch, y_batch) for x_batch, y_batch in valid_generator(valid_steps)]),
+                    validation_data=zip(*[(x_batch, y_batch) for x_batch, y_batch in valid_generator(int(valid_steps))]),
 #                     validation_data=valid_generator(),
                     validation_steps=valid_steps)
