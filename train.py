@@ -148,7 +148,8 @@ callbacks = [EarlyStopping(monitor='val_loss',
                              save_best_only=True,
                              save_weights_only=True),
              TensorBoard(log_dir='logs',
-                        write_images=True)]
+                         histogram_freq=1,
+                         write_images=True)]
 
 # model.load_weights('weights/best_weights.hdf5')
 model.fit_generator(generator=train_generator(),
