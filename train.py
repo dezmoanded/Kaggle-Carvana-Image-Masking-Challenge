@@ -114,8 +114,8 @@ def train_generator():
             yield x_batch, y_batch
 
 
-def valid_generator(steps):
-    for i in range(steps):
+def valid_generator():
+    for i in range(1):
         for start in range(0, len(ids_valid_split), batch_size):
             x_batch = []
             y_batch = []
@@ -161,6 +161,6 @@ model.fit_generator(generator=train_generator(),
                     epochs=epochs,
                     verbose=2,
                     callbacks=callbacks,
-                    validation_data=zip(*[(x_batch, y_batch) for x_batch, y_batch in valid_generator(int(valid_steps))]),
+                    validation_data=zip(*[(x_batch, y_batch) for x_batch, y_batch in valid_generator()]),
 #                     validation_data=valid_generator(),
                     validation_steps=valid_steps)
