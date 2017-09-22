@@ -486,8 +486,8 @@ def get_unet_1024(input_shape=(1024, 1024, 3),
 
     model = Model(inputs=inputs, outputs=classify)
 
-    # model.compile(optimizer=RMSprop(lr=0.0001), loss=bce_dice_loss, metrics=[dice_coeff])
-    model.compile(optimizer=RMSprop(lr=0.0001), loss=weighted_bce_dice_loss, metrics=[dice_coeff])
+    model.compile(optimizer=RMSprop(lr=0.0001), loss=bce_dice_loss, metrics=[dice_coeff])
+#     model.compile(optimizer=RMSprop(lr=0.0001), loss=weighted_bce_dice_loss, metrics=[dice_coeff])
 #     model.compile(optimizer=Adam(lr=0.0001, accumulator=3.), loss=weighted_bce_dice_loss, metrics=[dice_coeff])
 
     return model
