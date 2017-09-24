@@ -125,10 +125,10 @@ def valid_generator():
             ids_valid_batch = ids_valid_split[start:end]
             for id in ids_valid_batch.values:
                 img = cv2.imread('input/train_hq/{}.jpg'.format(id))
-                img = cv2.copyMakeBorder(img, 0, 0, 2, 2, cv2.BORDER_REPLICATE)
+                img = cv2.copyMakeBorder(img, 0, 0, 1, 1, cv2.BORDER_REPLICATE)
                 # img = cv2.resize(img, (input_size, input_size))
                 mask = cv2.imread('input/train_masks/{}_mask.png'.format(id), cv2.IMREAD_GRAYSCALE)
-                mask = cv2.copyMakeBorder(mask, 0, 0, 2, 2, cv2.BORDER_REPLICATE)
+                mask = cv2.copyMakeBorder(mask, 0, 0, 1, 1, cv2.BORDER_REPLICATE)
                 # mask = cv2.resize(mask, (input_size, input_size))
                 mask = np.expand_dims(mask, axis=2)
                 x_batch.append(img)
