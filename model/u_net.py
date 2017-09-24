@@ -492,6 +492,73 @@ def get_unet_1024(input_shape=(1024, 1024, 3),
 
     return model
 
+num_features_mul = 1
+
+def get_unet_1920x1280(input_shape=(1280, 1920, 3),
+                  num_classes=1):
+    inputs = Input(shape=input_shape)
+    # 1280x1920
+
+    down0b, down0b_pool = down_layer(inputs, 8 * num_features_mul)
+    # 640x960
+
+    down0a, down0a_pool = down_layer(down0b_pool, 16 * num_features_mul)
+    # 320x480
+
+    down0, down0_pool = down_layer(down0a_pool, 32 * num_features_mul)
+    # 160x240
+
+    down1, down1_pool = down_layer(down0_pool, 64 * num_features_mul)
+    # 80x120
+
+    down2, down2_pool = down_layer(down1_pool, 128 * num_features_mul)
+    # 40x60
+
+    down3, down3_pool = down_layer(down2_pool, 256 * num_features_mul)
+    # 20x30
+
+    down4, down4_pool = down_layer(down3_pool, 512 * num_features_mul)
+    # 10x15
+
+    center = Conv2D(1024 * num_features_mul, (3, 3), padding='same')(down4_pool)
+    center = BatchNormalization()(center)
+    center = Activation('relu')(center)
+    center = Conv2D(1024 * num_features_mul, (3, 3), padding='same')(center)
+    center = BatchNormalization()(center)
+    center = Activation('relu')(center)
+    # center
+
+    up4 = up_layer(center, down4, 512 * num_features_mul)
+    # 20x30
+
+    up3 = up_layer(up4, down3, 256 * num_features_mul)
+    # 40x60
+
+    up2 = up_layer(up3, down2, 128 * num_features_mul)
+    # 80x120
+
+    up1 = up_layer(up2, down1, 64 * num_features_mul)
+    # 160x240
+
+    up0 = up_layer(up1, down0, 32 * num_features_mul)
+    # 320x480
+
+    up0a = up_layer(up0, down0a, 16 * num_features_mul)
+    # 640x960
+
+    up0b = up_layer(up0a, down0b, 8 * num_features_mul)
+    # 1280x1920
+
+    classify = Conv2D(num_classes, (1, 1), activation='sigmoid')(up0b)
+
+    model = Model(inputs=inputs, outputs=classify)
+
+    model.compile(optimizer=RMSprop(lr=0.0001), loss=bce_dice_loss, metrics=[dice_coeff])
+#     model.compile(optimizer=RMSprop(lr=0.0001), loss=weighted_bce_dice_loss, metrics=[dice_coeff])
+#     model.compile(optimizer=Adam(lr=0.0001, accumulator=3.), loss=weighted_bce_dice_loss, metrics=[dice_coeff])
+
+    return model
+
 # https://www.kaggle.com/c/carvana-image-masking-challenge/discussion/38125
 def get_unet_1024_heng(input_shape=(1024, 1024, 3),
                   num_classes=1):

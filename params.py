@@ -2,6 +2,9 @@ from model.u_net import get_unet_128, get_unet_256, get_unet_512, get_unet_1024,
 
 input_size = 1024
 
+input_width = 1920
+input_height = 1280
+
 max_epochs = 50
 batch_size = 10
 
