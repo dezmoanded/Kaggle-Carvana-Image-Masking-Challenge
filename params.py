@@ -6,7 +6,7 @@ input_width = 1920
 input_height = 1280
 
 max_epochs = 50
-batch_size = 6
+batch_size = 5
 
 orig_width = 1918
 orig_height = 1280
