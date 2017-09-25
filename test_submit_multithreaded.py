@@ -81,7 +81,7 @@ def predict(ids, callback, model_config, data_dir='input/test_hq'):
             callback(prob, id)
 
     q = queue.Queue(maxsize=q_size)
-    q2 = queue.Queue(maxsize=q_size * batch_size)
+    q2 = queue.Queue(maxsize=200)
     t1 = threading.Thread(target=data_loader, name='DataLoader', args=(q,))
     t2 = threading.Thread(target=predictor, name='Predictor', args=(q,))
     t3 = threading.Thread(target=upload, name='Data upload', args=(q,))
