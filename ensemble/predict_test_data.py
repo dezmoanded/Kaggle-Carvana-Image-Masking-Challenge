@@ -11,7 +11,7 @@ from params import *
 from predict_train_data import model_configs
 
 def predict_train_data(model_name):
-    df_test = pd.read_csv('input/sample_submission.csv')
+    df_test = pd.read_csv('../input/sample_submission.csv')
     ids_test = df_test['img'].map(lambda s: s.split('.')[0])
 
     test_dir = "/home/pl57/data/carvana/model{}/test/test_predictions".format(model_name)
