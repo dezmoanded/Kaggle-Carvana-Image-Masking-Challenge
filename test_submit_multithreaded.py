@@ -28,12 +28,13 @@ def run_length_encode(mask):
     return rle
 
 class ModelConfig:
-    def __init__(self, model, weights_path, input_size, batch_size, resize=True):
+    def __init__(self, model, weights_path, input_size, batch_size, resize=True, pad=False):
         self.model = model
         self.weights_path = weights_path
         self.input_size = input_size
         self.batch_size = batch_size
         self.resize = resize
+        self.pad = pad
 
 def predict(ids, callback, model_config, data_dir='input/test_hq'):
     model = model_config.model
@@ -53,6 +54,8 @@ def predict(ids, callback, model_config, data_dir='input/test_hq'):
                 img = cv2.imread('{}/{}.jpg'.format(data_dir, id))
                 if model_config.resize:
                     img = cv2.resize(img, (input_size, input_size))
+                if model_config.pad:
+                    img = cv2.copyMakeBorder(img, 0, 0, 1, 1, cv2.BORDER_REPLICATE)
                 x_batch.append(img)
             x_batch = np.array(x_batch, np.float32) / 255
             q.put(x_batch)
@@ -68,6 +71,8 @@ def predict(ids, callback, model_config, data_dir='input/test_hq'):
             for pred, id in zip(preds, ids_test_batch.values):
                 if model_config.resize:
                     prob = cv2.resize(pred, (orig_width, orig_height))
+                if model_config.pad:
+                    prob = prob[1:-1]
                 callback(prob, id)
 
     q = queue.Queue(maxsize=q_size)
