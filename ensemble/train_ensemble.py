@@ -42,13 +42,17 @@ def generator(folder, ids_split):
             end = min(start + batch_size, len(ids_split))
             ids_batch = ids_split[start:end]
             for id in ids_batch.values:
+                img = cv2.imread('../input/train_hq/{}.jpg'.format(id))
+                img = img / 255
+
                 def load_file(name):
                     compressed = pd.read_pickle(name)
                     prediction = decompress(compressed, params.orig_height, params.orig_width)
                     return np.expand_dims(prediction, axis=2)
 
-                predictions = [load_file("model{}/train/{}/{}.pkl".format(model_name, folder, id))
-                              for model_name in model_names]
+                predictions = [img]
+                predictions += [load_file("/home/pl57/data/carvana/model{}/train/{}/{}.pkl".format(model_name, folder, id))
+                                for model_name in model_names]
                 predictions = np.concatenate(predictions, axis=2)
 
                 mask = cv2.imread('../input/train_masks/{}_mask.png'.format(id), cv2.IMREAD_GRAYSCALE)

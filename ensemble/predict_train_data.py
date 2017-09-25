@@ -6,7 +6,7 @@ import os
 sys.path.insert(0,'..')
 
 from test_submit_multithreaded import predict, ModelConfig
-from model.u_net import get_unet_128, get_unet_256, get_unet_512, get_unet_1024, get_unet_1024_heng
+from model.u_net import get_unet_128, get_unet_256, get_unet_512, get_unet_1024, get_unet_1024_heng, get_unet_1920x1280
 from compress import compress
 import model.trained.modelD as modelD
 
@@ -26,7 +26,11 @@ model_configs = {
     "E": ModelConfig(get_unet_1024(),
                      "../weights/best_weightsE.hdf5",
                      1024,
-                     7)
+                     7),
+    "G": ModelConfig(get_unet_1920x1280(),
+                     "../weights/best_weightsG.hdf5",
+                     -1,
+                     4)
 }
 
 def predict_train_data(model_name):
@@ -35,7 +39,7 @@ def predict_train_data(model_name):
 
     ids_train_split, ids_valid_split = train_test_split(ids_train, test_size=0.1, random_state=42)
 
-    train_dir = "model{}/train/train_predictions".format(model_name)
+    train_dir = "/home/pl57/data/carvana/model{}/train/train_predictions".format(model_name)
     if not os.path.exists(train_dir):
         os.makedirs(train_dir)
 
@@ -43,7 +47,7 @@ def predict_train_data(model_name):
         df = compress(prob)
         df.to_pickle("{}/{}.pkl".format(train_dir, id))
 
-    valid_dir = "model{}/train/valid_predictions".format(model_name)
+    valid_dir = "/home/pl57/data/carvana/model{}/train/valid_predictions".format(model_name)
     if not os.path.exists(valid_dir):
         os.makedirs(valid_dir)
 
