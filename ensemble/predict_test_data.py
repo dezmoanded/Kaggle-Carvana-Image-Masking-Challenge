@@ -30,7 +30,7 @@ def predict_train_data(model_name):
         rle = run_length_encode(mask)
         rles.append(rle)
 
-        np.save("{}/{}.npy".format(test_dir, id), prob)
+        # np.save("{}/{}.npy".format(test_dir, id), prob)
 
     model_config = model_configs[model_name]
 
