@@ -7,7 +7,6 @@ sys.path.insert(0,'..')
 
 from test_submit_multithreaded import predict, ModelConfig
 from model.u_net import get_unet_128, get_unet_256, get_unet_512, get_unet_1024, get_unet_1024_heng, get_unet_1920x1280
-from compress import compress
 import model.trained.modelD as modelD
 
 model_configs = {
@@ -44,7 +43,7 @@ def predict_train_data(model_name):
         os.makedirs(train_dir)
 
     def train_callback(prob, id):
-        df = compress(prob)
+        # df = compress(prob)
         df.to_pickle("{}/{}.pkl".format(train_dir, id))
 
     valid_dir = "/home/pl57/data/carvana/model{}/train/valid_predictions".format(model_name)
@@ -52,7 +51,7 @@ def predict_train_data(model_name):
         os.makedirs(valid_dir)
 
     def valid_callback(prob, id):
-        df = compress(prob)
+        # df = compress(prob)
         df.to_pickle("{}/{}.pkl".format(valid_dir, id))
 
     model_config = model_configs[model_name]
