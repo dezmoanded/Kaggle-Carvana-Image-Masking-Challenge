@@ -10,6 +10,8 @@ from params import *
 
 from predict_train_data import model_configs
 
+rles = []
+
 def predict_train_data(model_name):
     df_test = pd.read_csv('../input/sample_submission.csv')
     ids_test = df_test['img'].map(lambda s: s.split('.')[0])
@@ -21,8 +23,6 @@ def predict_train_data(model_name):
     names = []
     for id in ids_test:
         names.append('{}.jpg'.format(id))
-
-    rles = []
 
     def test_callback(prob, id):
         global rles
@@ -37,6 +37,7 @@ def predict_train_data(model_name):
     print('Predicting {} samples'.format(len(ids_test)))
     predict(ids_test, test_callback, model_config, '../input/test_hq')
 
+    global rles
     print("Generating submission file...")
     df = pd.DataFrame({'img': names, 'rle_mask': rles})
     df.to_csv("../submit/submission{}.csv.gz".format(model_name), index=False, compression='gzip')
