@@ -30,7 +30,8 @@ model_configs = {
                      "../weights/best_weightsG.hdf5",
                      -1,
                      4,
-                     resize=False)
+                     resize=False,
+                     pad=True)
 }
 
 def predict_train_data(model_name):
