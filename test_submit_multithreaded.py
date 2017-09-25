@@ -72,7 +72,7 @@ def predict(ids, callback, model_config, data_dir='input/test_hq'):
                 if model_config.resize:
                     prob = cv2.resize(pred, (orig_width, orig_height))
                 if model_config.pad:
-                    prob = pred[1:-1]
+                    prob = pred[:, 1:-1]
                 callback(prob, id)
 
     q = queue.Queue(maxsize=q_size)
