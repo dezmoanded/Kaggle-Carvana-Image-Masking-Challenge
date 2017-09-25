@@ -29,7 +29,8 @@ model_configs = {
     "G": ModelConfig(get_unet_1920x1280(),
                      "../weights/best_weightsG.hdf5",
                      -1,
-                     4)
+                     4,
+                     resize=False)
 }
 
 def predict_train_data(model_name):
