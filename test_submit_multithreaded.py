@@ -73,17 +73,27 @@ def predict(ids, callback, model_config, data_dir='input/test_hq'):
                     prob = cv2.resize(pred, (orig_width, orig_height))
                 if model_config.pad:
                     prob = pred[:, 1:-1]
+                q2.put((prob, id))
                 callback(prob, id)
 
+    def upload(q, ):
+        for i in tqdm(range(0, len(ids))):
+            prob, id = q2.get()
+            callback(prob, id)
+
     q = queue.Queue(maxsize=q_size)
+    q2 = queue.Queue(maxsize=q_size * batch_size)
     t1 = threading.Thread(target=data_loader, name='DataLoader', args=(q,))
     t2 = threading.Thread(target=predictor, name='Predictor', args=(q,))
+    t3 = threading.Thread(target=upload, name='Data upload', args=(q,))
     print('Predicting on {} samples with batch_size = {}...'.format(len(ids), batch_size))
     t1.start()
     t2.start()
+    t3.start()
     # Wait for both threads to finish
     t1.join()
     t2.join()
+    t3.join()
 
 
 if __name__ == "__main__":
