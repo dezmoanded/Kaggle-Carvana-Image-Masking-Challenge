@@ -74,7 +74,6 @@ def predict(ids, callback, model_config, data_dir='input/test_hq'):
                 if model_config.pad:
                     prob = pred[:, 1:-1]
                 q2.put((prob, id))
-                callback(prob, id)
 
     def upload(q, ):
         for i in tqdm(range(0, len(ids))):
