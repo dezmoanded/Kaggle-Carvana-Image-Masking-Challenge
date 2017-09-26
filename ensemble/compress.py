@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from cdecompress import cdecompress
+#from cdecompress import cdecompress
 
 def compress(prob):
     lower_limit = .005
@@ -30,10 +30,6 @@ def compress(prob):
     return df
 
 def decompress(df, orig_height, orig_width):
-    prob = np.zeros(orig_width * orig_height)
-
-
-def old_decompress(df, orig_height, orig_width):
     prob = np.zeros(orig_width * orig_height)
 
     for i, row in df.iterrows():
