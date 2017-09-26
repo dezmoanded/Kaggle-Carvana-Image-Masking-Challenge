@@ -36,10 +36,12 @@ ids_train = df_train['img'].map(lambda s: s.split('.')[0])
 ids_train_split, ids_valid_split = train_test_split(ids_train, test_size=0.1, random_state=42)
 
 def generator(folder, ids_split):
-    print("Loading predicted masks")
-    models_rows = {model: pd.read_csv("train_submit/{}{}.csv.gz".format(folder, model)).iterrows() for model in tqdm(model_names)}
-
     while True:
+        print("Loading predicted masks")
+        def get_data():
+            return {model: pd.read_csv("train_submit/{}{}.csv.gz".format(folder, model)).iterrows() for model in tqdm(model_names)}
+        models_rows = get_data()
+    
         for start in range(0, len(ids_split), batch_size):
             x_batch = []
             y_batch = []
@@ -105,4 +107,4 @@ model.fit_generator(generator=train_generator(),
                     callbacks=callbacks,
                     validation_data=valid_generator(),
                     validation_steps=np.ceil(float(len(ids_valid_split)) / float(batch_size)),
-                    initial_epoch=13)
+                    initial_epoch=14)

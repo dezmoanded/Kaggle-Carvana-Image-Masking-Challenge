@@ -53,7 +53,7 @@ def predict_train_data(model_name):
     model_config = model_configs[model_name]
 
     global rles
-    
+    """
     rles = []
     print('Predicting {} samples'.format(len(ids_train_split)))
     predict(ids_train_split, callback, model_config, '../input/train_hq')
@@ -64,7 +64,7 @@ def predict_train_data(model_name):
     print("Generating submission file...")
     df = pd.DataFrame({'img': names, 'rle_mask': rles})
     df.to_csv("train_submit/train_submission{}.csv.gz".format(model_name), index=False, compression='gzip')
-    
+    """
     rles = []
     print('Predicting {} samples'.format(len(ids_valid_split)))
     predict(ids_valid_split, callback, model_config, '../input/train_hq')
