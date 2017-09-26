@@ -13,7 +13,7 @@ from ensemble_model import get_ensemble_model, batch_size
 from compress import decompress
 
 def run_length_decode(rle, orig_width, orig_height):
-    runs = rle.astype(int)
+    runs = np.array(rle.split(' ')).astype(int)
     runs[1::2] = runs[1::2] + runs[:-1:2]
     inds = np.zeros(orig_height * orig_width)
     runs = runs - 1
@@ -52,7 +52,7 @@ def generator(folder, ids_split):
                 def load_file(id, model):
                     model_df = model_dfs[model]
                     row = model_df[model_df.img == "{}.jpg".format(id)]
-                    rle = row.rle_mask.values
+                    rle = row.rle_mask.values[0]
                     return run_length_decode(rle, params.orig_width, params.orig_height)
 
                 predictions = [img]
