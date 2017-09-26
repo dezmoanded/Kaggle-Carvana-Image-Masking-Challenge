@@ -37,7 +37,7 @@ ids_train_split, ids_valid_split = train_test_split(ids_train, test_size=0.1, ra
 
 def generator(folder, ids_split):
     print("Loading predicted masks")
-    model_dfs = {model: pd.read_csv("train_submit/{}{}.csv.gz".format(folder, model)) for model in tqdm(model_names)}
+    models_rows = {model: pd.read_csv("train_submit/{}{}.csv.gz".format(folder, model)).iterrows() for model in tqdm(model_names)}
 
     while True:
         for start in range(0, len(ids_split), batch_size):
@@ -49,15 +49,19 @@ def generator(folder, ids_split):
                 img = cv2.imread('../input/train_hq/{}.jpg'.format(id))
                 img = img / 255
 
-                def load_file(id, model):
-                    model_df = model_dfs[model]
-                    row = model_df[model_df.img == "{}.jpg".format(id)]
+                def load_file(model):
+                    row = next(models_rows[model])
+                    # row = model_df[model_df.img == "{}.jpg".format(id)]
                     rle = row.rle_mask.values[0]
                     prob = run_length_decode(rle, params.orig_width, params.orig_height)
                     return np.expand_dims(prob, axis=2)
 
                 predictions = [np.expand_dims(img[:,:,i], axis=2) for i in range(3)]
-                predictions += [load_file(id, model_name)
+                # img = ""
+                # for model_name in model_names:
+                #     img, prob = load_file(model_name)
+                #     predictions += [prob]
+                predictions += [load_file(model_name)
                                 for model_name in model_names]
                 predictions = np.concatenate(predictions, axis=2)
 
