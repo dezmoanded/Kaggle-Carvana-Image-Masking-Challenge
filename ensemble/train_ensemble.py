@@ -53,9 +53,10 @@ def generator(folder, ids_split):
                     model_df = model_dfs[model]
                     row = model_df[model_df.img == "{}.jpg".format(id)]
                     rle = row.rle_mask.values[0]
-                    return run_length_decode(rle, params.orig_width, params.orig_height)
+                    prob = run_length_decode(rle, params.orig_width, params.orig_height)
+                    return prob
 
-                predictions = [img]
+                predictions = [img[:,:,i] for i in range(3)]
                 predictions += [load_file(id, model_name)
                                 for model_name in model_names]
                 predictions = np.concatenate(predictions, axis=2)
