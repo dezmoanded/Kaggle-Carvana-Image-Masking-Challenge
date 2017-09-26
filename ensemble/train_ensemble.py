@@ -6,13 +6,14 @@ from sklearn.model_selection import train_test_split
 import os
 import sys
 sys.path.insert(0,'..')
+from tqdm import tqdm
 
 import params
 from ensemble_model import get_ensemble_model, batch_size
 from compress import decompress
 
 def run_length_decode(rle, orig_width, orig_height):
-    runs = np.array(rle.split(' ')).astype(int)
+    runs = rle #np.array(rle.split(' ')).astype(int)
     runs[1::2] = runs[1::2] + runs[:-1:2]
     inds = np.zeros(orig_height * orig_width)
     runs = runs - 1
@@ -35,6 +36,9 @@ ids_train = df_train['img'].map(lambda s: s.split('.')[0])
 ids_train_split, ids_valid_split = train_test_split(ids_train, test_size=0.1, random_state=42)
 
 def generator(folder, ids_split):
+    print("Loading predicted masks")
+    model_dfs = {model: pd.read_csv("train_submit/{}{}.csv.gz".format(folder, model)) for model in tqdm(model_names)}
+
     while True:
         for start in range(0, len(ids_split), batch_size):
             x_batch = []
@@ -45,13 +49,14 @@ def generator(folder, ids_split):
                 img = cv2.imread('../input/train_hq/{}.jpg'.format(id))
                 img = img / 255
 
-                def load_file(name):
-                    compressed = pd.read_pickle(name)
-                    prediction = decompress(compressed, params.orig_height, params.orig_width)
-                    return np.expand_dims(prediction, axis=2)
+                def load_file(id, model):
+                    model_df = model_dfs[model]
+                    row = model_df[model_df.img == "{}.jpg".format(id)]
+                    rle = row.rle_mask.values
+                    return run_length_decode(rle, params.orig_width, params.orig_height)
 
                 predictions = [img]
-                predictions += [load_file("/home/pl57/data/carvana/model{}/train/{}/{}.pkl".format(model_name, folder, id))
+                predictions += [load_file(id, model_name)
                                 for model_name in model_names]
                 predictions = np.concatenate(predictions, axis=2)
 
@@ -65,11 +70,11 @@ def generator(folder, ids_split):
             yield x_batch, y_batch
 
 def train_generator():
-    for x_batch, y_batch in generator("train_predictions", ids_train_split):
+    for x_batch, y_batch in generator("train_submission", ids_train_split):
         yield x_batch, y_batch
 
 def valid_generator():
-    for x_batch, y_batch in generator("valid_predictions", ids_valid_split):
+    for x_batch, y_batch in generator("valid_submission", ids_valid_split):
         yield x_batch, y_batch
 
 callbacks = [EarlyStopping(monitor='val_loss',
