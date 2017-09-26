@@ -50,7 +50,7 @@ def generator(folder, ids_split):
                 img = img / 255
 
                 def load_file(model):
-                    row = next(models_rows[model])
+                    row = next(models_rows[model])[1]
                     # row = model_df[model_df.img == "{}.jpg".format(id)]
                     rle = row.rle_mask.values[0]
                     prob = run_length_decode(rle, params.orig_width, params.orig_height)
