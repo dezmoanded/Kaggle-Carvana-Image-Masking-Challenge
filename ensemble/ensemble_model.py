@@ -19,6 +19,6 @@ def get_ensemble_model(input_shape, num_classes=1):
 
     classify = Conv2D(num_classes, (1, 1), activation='sigmoid')(conv1)
     model = Model(inputs=inputs, outputs=classify)
-    model.compile(optimizer=RMSprop(lr=0.001), loss=weighted_bce_dice_loss, metrics=[dice_coeff])
+    model.compile(optimizer=RMSprop(lr=0.001), loss=bce_dice_loss, metrics=[dice_coeff])
 
     return model
