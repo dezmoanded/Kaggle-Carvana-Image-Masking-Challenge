@@ -52,7 +52,7 @@ def generator(folder, ids_split):
                 def load_file(model):
                     row = next(models_rows[model])[1]
                     # row = model_df[model_df.img == "{}.jpg".format(id)]
-                    rle = row.rle_mask.values[0]
+                    rle = row.rle_mask
                     prob = run_length_decode(rle, params.orig_width, params.orig_height)
                     return np.expand_dims(prob, axis=2)
 
