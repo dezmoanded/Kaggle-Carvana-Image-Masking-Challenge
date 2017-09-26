@@ -28,7 +28,7 @@ epochs = 100
 
 model_names = ["C", "D", "E", "G"]
 
-model = get_ensemble_model([params.orig_height, params.orig_width, len(model_names)])
+model = get_ensemble_model([params.orig_height, params.orig_width, len(model_names) + 3])
 
 df_train = pd.read_csv('../input/train_masks.csv')
 ids_train = df_train['img'].map(lambda s: s.split('.')[0])
