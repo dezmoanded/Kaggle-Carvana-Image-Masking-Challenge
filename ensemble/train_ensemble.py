@@ -13,7 +13,7 @@ from ensemble_model import get_ensemble_model, batch_size
 from compress import decompress
 
 def run_length_decode(rle, orig_width, orig_height):
-    runs = np.array(rle.split(' ')).astype(int)
+    runs = rle.astype(int)
     runs[1::2] = runs[1::2] + runs[:-1:2]
     inds = np.zeros(orig_height * orig_width)
     runs = runs - 1
