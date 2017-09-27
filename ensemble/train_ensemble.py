@@ -35,45 +35,60 @@ ids_train = df_train['img'].map(lambda s: s.split('.')[0])
 
 ids_train_split, ids_valid_split = train_test_split(ids_train, test_size=0.1, random_state=42)
 
+
+def get_model_rows(prefix):
+    return {model: pd.read_csv("{}{}.csv.gz".format(prefix, model)).iterrows() for model in model_names}
+
+def get_x_batch_factory(models_rows, data_dir='../input/train_hq'):
+    def get_x_batch(ids, start):
+        x_batch = []
+        end = min(start + batch_size, len(ids))
+        ids_batch = ids[start:end]
+        for id in ids_batch.values:
+            img = cv2.imread('{}/{}.jpg'.format(data_dir, id))
+            img = img / 255
+
+            def load_file(model):
+                row = next(models_rows[model])[1]
+                # row = model_df[model_df.img == "{}.jpg".format(id)]
+                rle = row.rle_mask
+                prob = run_length_decode(rle, params.orig_width, params.orig_height)
+                return np.expand_dims(prob, axis=2)
+
+            predictions = [np.expand_dims(img[:, :, i], axis=2) for i in range(3)]
+            # img = ""
+            # for model_name in model_names:
+            #     img, prob = load_file(model_name)
+            #     predictions += [prob]
+            predictions += [load_file(model_name)
+                            for model_name in model_names]
+            predictions = np.concatenate(predictions, axis=2)
+            x_batch.append(predictions)
+
+        x_batch = np.array(x_batch, np.float32)
+        return x_batch
+
+    return get_x_batch
+
 def generator(folder, ids_split):
     while True:
         print("Loading predicted masks")
-        def get_data():
-            return {model: pd.read_csv("train_submit/{}{}.csv.gz".format(folder, model)).iterrows() for model in tqdm(model_names)}
-        models_rows = get_data()
+
+        models_rows = get_model_rows('train_submit/{}_submission'.format(folder))
     
         for start in range(0, len(ids_split), batch_size):
-            x_batch = []
             y_batch = []
             end = min(start + batch_size, len(ids_split))
             ids_batch = ids_split[start:end]
+
             for id in ids_batch.values:
-                img = cv2.imread('../input/train_hq/{}.jpg'.format(id))
-                img = img / 255
-
-                def load_file(model):
-                    row = next(models_rows[model])[1]
-                    # row = model_df[model_df.img == "{}.jpg".format(id)]
-                    rle = row.rle_mask
-                    prob = run_length_decode(rle, params.orig_width, params.orig_height)
-                    return np.expand_dims(prob, axis=2)
-
-                predictions = [np.expand_dims(img[:,:,i], axis=2) for i in range(3)]
-                # img = ""
-                # for model_name in model_names:
-                #     img, prob = load_file(model_name)
-                #     predictions += [prob]
-                predictions += [load_file(model_name)
-                                for model_name in model_names]
-                predictions = np.concatenate(predictions, axis=2)
-
                 mask = cv2.imread('../input/train_masks/{}_mask.png'.format(id), cv2.IMREAD_GRAYSCALE)
                 mask = np.expand_dims(mask, axis=2)
-                x_batch.append(predictions)
                 y_batch.append(mask)
 
-            x_batch = np.array(x_batch, np.float32)
             y_batch = np.array(y_batch, np.float32) / 255
+
+            x_batch = get_x_batch(ids_split, start, models_rows)
             yield x_batch, y_batch
 
 def train_generator():

@@ -36,7 +36,26 @@ class ModelConfig:
         self.resize = resize
         self.pad = pad
 
-def predict(ids, callback, model_config, data_dir='input/test_hq'):
+def get_x_batch_factory(model_config, data_dir):
+    def get_x_batch(ids, start):
+        x_batch = []
+        end = min(start + batch_size, len(ids))
+        ids_test_batch = ids[start:end]
+        for id in ids_test_batch.values:
+            img = cv2.imread('{}/{}.jpg'.format(data_dir, id))
+            if model_config.resize:
+                img = cv2.resize(img, (input_size, input_size))
+            if model_config.pad:
+                img = cv2.copyMakeBorder(img, 0, 0, 1, 1, cv2.BORDER_REPLICATE)
+            x_batch.append(img)
+        x_batch = np.array(x_batch, np.float32) / 255
+        return x_batch
+    return get_x_batch
+
+def predict(ids, callback, model_config, data_dir='input/test_hq', get_x_batch=None):
+    if get_x_batch == None:
+        get_x_batch = get_x_batch_factory(model_config, data_dir)
+
     model = model_config.model
     input_size = model_config.input_size
     batch_size = model_config.batch_size
@@ -47,17 +66,7 @@ def predict(ids, callback, model_config, data_dir='input/test_hq'):
 
     def data_loader(q, ):
         for start in range(0, len(ids), batch_size):
-            x_batch = []
-            end = min(start + batch_size, len(ids))
-            ids_test_batch = ids[start:end]
-            for id in ids_test_batch.values:
-                img = cv2.imread('{}/{}.jpg'.format(data_dir, id))
-                if model_config.resize:
-                    img = cv2.resize(img, (input_size, input_size))
-                if model_config.pad:
-                    img = cv2.copyMakeBorder(img, 0, 0, 1, 1, cv2.BORDER_REPLICATE)
-                x_batch.append(img)
-            x_batch = np.array(x_batch, np.float32) / 255
+            x_batch = get_x_batch(ids, start)
             q.put(x_batch)
 
     def predictor(q, ):
